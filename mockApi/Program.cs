@@ -47,20 +47,23 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options => {
+    app.UseSwaggerUI(options =>
+    {
         options.SwaggerEndpoint("/openapi/v1.json", "v1");
     });
 }
 
-app.MapGet("/products", async (AppDbContext db) => {
-    return await db.Products.OrderBy(p => p.Id).Take(10).ToListAsync();
+app.MapGet("/products", async (AppDbContext db) =>
+{
+    return await db.Products.OrderBy(p => p.Id).Take(25).ToListAsync();
 });
 
-app.MapGet("/categoryInfo", async (AppDbContext db) => {
+app.MapGet("/categoryInfo", async (AppDbContext db) =>
+{
     var products = await db.Products.AsNoTracking().ToListAsync();
 
-    var productsByCategory = products.CountBy(p => p.CategoryId).OrderBy( x => x.Key);
-    return productsByCategory.Select(categoryGroup => new CategoryDTO 
+    var productsByCategory = products.CountBy(p => p.CategoryId).OrderBy(x => x.Key);
+    return productsByCategory.Select(categoryGroup => new CategoryDTO
     {
         CategoryId = categoryGroup.Key,
         ProductCount = categoryGroup.Value
