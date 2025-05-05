@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using mockApi.Data;
 using mockApi.Models;
+using mockApi.Models.Dtos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,7 @@ using (var scope = app.Services.CreateScope())
     if (!context.Products.Any())
     {
         var productFaker = new Faker<Product>()
+            .RuleFor(p => p.Id, f => f.IndexFaker + 1) // Ensure unique Ids starting from 1
             .RuleFor(p => p.Name, f => f.Commerce.ProductName())
             .RuleFor(p => p.Price, f => f.Finance.Amount(50, 2000))
             .RuleFor(p => p.CategoryId, f => f.Random.Int(1, 5));
@@ -51,7 +53,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/products", async (AppDbContext db) => {
-    await db.Products.OrderBy(p => p.Id).Take(10).ToListAsync();
+    return await db.Products.OrderBy(p => p.Id).Take(10).ToListAsync();
+});
+
+app.MapGet("/categoryInfo", async (AppDbContext db) => {
+    var products = await db.Products.AsNoTracking().ToListAsync();
+
+    var productsByCategory = products.CountBy(p => p.CategoryId).OrderBy( x => x.Key);
+    return productsByCategory.Select(categoryGroup => new CategoryDTO 
+    {
+        CategoryId = categoryGroup.Key,
+        ProductCount = categoryGroup.Value
+    }).ToList();
 });
 
 app.Run();
